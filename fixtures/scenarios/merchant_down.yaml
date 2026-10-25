@@ -1,0 +1,56 @@
+name: merchant_down
+description: >
+  acme's endpoint wg_3532 started returning 503s and timeouts about 95 minutes ago.
+  acme's other endpoint (wg_7710) and other tenants are healthy apart from normal background
+  noise. No deploys. Expected conclusion: merchant-side outage on wg_3532.
+
+# Offsets are minutes relative to now (negative = in the past).
+failed_events:
+  - tenant_id: acme
+    destination_id: wg_3532
+    status: 503
+    message: Service Unavailable
+    count: 380
+    from_min: -95
+    to_min: 0
+    event_types: [payment.succeeded, subscription.renewed, invoice.paid, payment.refunded]
+    retry_attempts: [1, 6]
+  - tenant_id: acme
+    destination_id: wg_3532
+    status: 504
+    message: Gateway Timeout after 10000ms
+    count: 32
+    from_min: -95
+    to_min: 0
+    event_types: [payment.succeeded, invoice.paid]
+    retry_attempts: [1, 6]
+  # Normal background noise on acme's healthy endpoint before the incident.
+  - tenant_id: acme
+    destination_id: wg_7710
+    status: 400
+    message: "Bad Request: unknown field 'metadata.source' (signature=sk_live_a1b2c3d4)"
+    count: 3
+    from_min: -300
+    to_min: -200
+    event_types: [customer.updated]
+    retry_attempts: [1, 2]
+  # Another tenant with unrelated low-level noise.
+  - tenant_id: globex
+    destination_id: wg_8812
+    status: 410
+    message: Gone
+    count: 6
+    from_min: -180
+    to_min: -10
+    event_types: [subscription.created]
+    retry_attempts: [1, 3]
+
+dlq_events:
+  - tenant_id: acme
+    destination_id: wg_3532
+    status: 503
+    message: Service Unavailable
+    count: 37
+    from_min: -60
+    to_min: 0
+    event_types: [payment.succeeded, subscription.renewed]

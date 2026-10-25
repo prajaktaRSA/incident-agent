@@ -144,8 +144,11 @@ you › only the 503s from the last 30 minutes
 
 - **Provider:** Google Gemini, using the user's API key, through `langchain-google-genai`
   (`ChatGoogleGenerativeAI`).
-- **Model:** Gemini Flash. The model ID is a config value (`GEMINI_MODEL`, defaulting to
-  `gemini-flash-latest`). **M0 checks the exact ID** by listing the models available to the key.
+- **Model:** `gemini-3.5-flash` (`GEMINI_MODEL`), with `gemini-3.1-flash-lite` as the fallback
+  (`GEMINI_FALLBACK_MODEL`) when the primary is overloaded, rate-limited or times out.
+  Model IDs are pinned. In M0 the `gemini-flash-latest` alias was overloaded: one call took 350s
+  and others returned 503, while `gemini-3.5-flash` answered in 5–12s. `incident-agent models`
+  lists the models a key can use.
 - **The provider can be swapped:** `LLM_PROVIDER=gemini|groq|ollama|anthropic|bedrock` maps to the
   matching LangChain chat model. Gemini is the only one implemented in the MVP; the others are a
   one-line change later.
