@@ -1,0 +1,17 @@
+{
+  "source": "cloudwatch_alarm",
+  "AlarmName": "webhook-delivery-failures-critical",
+  "NewStateValue": "ALARM",
+  "StateChangeTime": "-5m",
+  "Trigger": {
+    "Namespace": "WebhookService",
+    "MetricName": "DeliveryFailures",
+    "Threshold": 400,
+    "Dimensions": [
+      {
+        "name": "Environment",
+        "value": "stg"
+      }
+    ]
+  }
+}

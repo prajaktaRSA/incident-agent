@@ -1,0 +1,11 @@
+# Logical log sources and where they live in each backend (LOGS_BACKEND=mock|cloudwatch|splunk).
+# The same logs are shipped to both Splunk and CloudWatch Logs.
+sources:
+  webhook_service:
+    description: One line per delivery attempt (successes included), plus consume/filter/DLQ lines
+    splunk_index: webhook_service
+    cloudwatch_log_group: /ecs/webhook-service  # assumed
+  events_service:
+    description: Producer publish logs and internal config API logs
+    splunk_index: events_service
+    cloudwatch_log_group: /ecs/events-service  # assumed

@@ -1,0 +1,25 @@
+{
+  "source": "cloudwatch_alarm",
+  "AlarmName": "payment-events-offset-lag-critical",
+  "NewStateValue": "ALARM",
+  "StateChangeTime": "-5m",
+  "Trigger": {
+    "Namespace": "AWS/Kafka",
+    "MetricName": "MaxOffsetLag",
+    "Threshold": 2000,
+    "Dimensions": [
+      {
+        "name": "Cluster Name",
+        "value": "events-msk-stg"
+      },
+      {
+        "name": "Consumer Group",
+        "value": "webhook-delivery-cg"
+      },
+      {
+        "name": "Topic",
+        "value": "payment-events"
+      }
+    ]
+  }
+}

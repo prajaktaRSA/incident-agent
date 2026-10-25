@@ -5,8 +5,9 @@ workflow form, or a CloudWatch alarm) starts an investigation: code picks and ru
 rules rank the likely causes, and one LLM call writes an internal RCA for the Slack thread.
 See [PLAN.md](PLAN.md) for the design.
 
-**Status: M1.** The full trigger pipeline runs on mocked data; one data tool
-(`query_failed_events`) is implemented, the rest arrive in M2 and show up as "not available".
+**Status: M2.** The full trigger pipeline runs on mocked data with all eight tools, twelve
+triage rules, runbook search and an optional extra-checks round. Nine scenarios in
+`fixtures/scenarios/` (layered on `_base.yaml`), with matching triggers in `fixtures/triggers/`.
 
 ## Setup
 

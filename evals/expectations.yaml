@@ -9,7 +9,8 @@
 #   must_mention:       substrings that must appear in the RCA (IDs, statuses)
 #   questions:          for intake-only scenarios, the fields that must be asked about
 #
-# Scenarios marked `ready: false` need M2 tools or data before they can pass.
+# All scenarios have data and tools as of M2. `tests/test_scenarios.py` checks each one's triage
+# result without an LLM; the M3 eval runner checks the LLM-written RCA.
 
 scenarios:
   merchant_down:
@@ -22,7 +23,7 @@ scenarios:
     must_mention: [wg_3532, "503"]
 
   not_subscribed:
-    ready: false
+    ready: true
     trigger: not_subscribed
     scenario: not_subscribed
     category: NOT_SUBSCRIBED
@@ -31,7 +32,7 @@ scenarios:
     must_mention: [invoice.paid]
 
   delivered_ok:
-    ready: false
+    ready: true
     trigger: delivered_ok
     scenario: delivered_ok
     category: DELIVERED_OK
@@ -40,7 +41,7 @@ scenarios:
     must_mention: [request_id]
 
   still_retrying:
-    ready: false
+    ready: true
     trigger: still_retrying
     scenario: still_retrying
     category: STILL_RETRYING
@@ -48,7 +49,7 @@ scenarios:
     must_cite: [event_history, event_state]
 
   not_consumed:
-    ready: false
+    ready: true
     trigger: not_consumed
     scenario: not_consumed
     category: NOT_CONSUMED
@@ -56,7 +57,7 @@ scenarios:
     must_cite: [event_history]
 
   bad_deploy:
-    ready: false
+    ready: true
     trigger: bad_deploy
     scenario: bad_deploy
     category: BAD_DEPLOY
@@ -64,7 +65,7 @@ scenarios:
     must_cite: [deployments, delivery_failures]
 
   config_api_auth:
-    ready: false
+    ready: true
     trigger: config_api_auth
     scenario: config_api_auth
     category: CONFIG_FETCH_FAILURE
@@ -73,7 +74,7 @@ scenarios:
     must_mention: ["401"]
 
   traffic_burst:
-    ready: false
+    ready: true
     trigger: traffic_burst
     scenario: traffic_burst
     category: TRAFFIC_BURST
@@ -81,7 +82,7 @@ scenarios:
     must_cite: [alarm_metric]
 
   rate_limited:
-    ready: false
+    ready: true
     trigger: rate_limited
     scenario: rate_limited
     category: MERCHANT_RATE_LIMITING

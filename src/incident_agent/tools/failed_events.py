@@ -2,7 +2,7 @@
 
 import json
 from collections import Counter, defaultdict
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Any, Literal
 
 from langchain_core.tools import BaseTool, StructuredTool
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from incident_agent.backends.base import FailedEventsBackend
 from incident_agent.redact import redact
-from incident_agent.tools.common import ToolResult, error, iso, ok, to_ms
+from incident_agent.tools.common import ToolResult, error, iso, ok, to_ms, window_error
 
 MAX_WINDOW = timedelta(days=7)
 SAMPLE_MESSAGES_PER_STATUS = 5
@@ -48,13 +48,9 @@ def query_failed_events(
     end: datetime,
     source: Literal["failed", "dlq", "both"] = "both",
 ) -> ToolResult:
+    if problem := window_error(start, end, MAX_WINDOW):
+        return error(problem)
     start_ms, end_ms = to_ms(start), to_ms(end)
-    if start_ms >= end_ms:
-        return error("start must be before end.")
-    if end_ms - start_ms > MAX_WINDOW.total_seconds() * 1000:
-        return error("Window is longer than 7 days; narrow it.")
-    if end_ms > to_ms(datetime.now(UTC) + timedelta(minutes=5)):
-        return error("end is in the future; use the current time for 'now'.")
 
     failed = (
         backend.query_by_tenant("failed", site_id, start_ms, end_ms) if source != "dlq" else []

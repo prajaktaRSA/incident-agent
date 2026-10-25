@@ -24,3 +24,6 @@ class MockFailedEventsBackend:
             for item in self._tables[table]
             if item["tenant_id"] == tenant_id and start_ms <= item[time_field] < end_ms
         ]
+
+    def get_by_event_id(self, table: FailedEventsTable, event_id: str) -> list[dict[str, Any]]:
+        return [item for item in self._tables[table] if item["eventId"] == event_id]

@@ -29,12 +29,71 @@ class TopicMapping:
         return next((t for t in self.topics if event_type in t.event_types), None)
 
 
+@dataclass(frozen=True)
+class MetricDef:
+    key: str
+    namespace: str
+    name: str
+    stat: str
+    unit: str
+    dimensions: tuple[str, ...]
+    warning: float | None
+    critical: float | None
+    min_spike: float
+
+
+@dataclass(frozen=True)
+class MetricsConfig:
+    metrics: dict[str, MetricDef]
+
+    def get(self, key: str) -> MetricDef | None:
+        return self.metrics.get(key)
+
+    def find(self, namespace: str, name: str) -> MetricDef | None:
+        return next(
+            (m for m in self.metrics.values() if m.namespace == namespace and m.name == name), None
+        )
+
+
 def load_topic_mapping(config_dir: Path | None = None) -> TopicMapping:
     return _load_topic_mapping(config_dir or get_settings().config_dir)
 
 
 def load_known_sites(config_dir: Path | None = None) -> frozenset[str]:
     return _load_known_sites(config_dir or get_settings().config_dir)
+
+
+def load_metrics_config(config_dir: Path | None = None) -> MetricsConfig:
+    return _load_metrics_config(config_dir or get_settings().config_dir)
+
+
+def load_log_sources(config_dir: Path | None = None) -> dict[str, dict[str, str]]:
+    return _load_log_sources(config_dir or get_settings().config_dir)
+
+
+@lru_cache
+def _load_metrics_config(config_dir: Path) -> MetricsConfig:
+    raw = yaml.safe_load((config_dir / "metrics.yaml").read_text())["metrics"]
+    metrics = {
+        key: MetricDef(
+            key=key,
+            namespace=spec["namespace"],
+            name=spec["name"],
+            stat=spec["stat"],
+            unit=spec["unit"],
+            dimensions=tuple(spec["dimensions"]),
+            warning=(spec.get("alarms") or {}).get("warning"),
+            critical=(spec.get("alarms") or {}).get("critical"),
+            min_spike=spec["min_spike"],
+        )
+        for key, spec in raw.items()
+    }
+    return MetricsConfig(metrics=metrics)
+
+
+@lru_cache
+def _load_log_sources(config_dir: Path) -> dict[str, dict[str, str]]:
+    return yaml.safe_load((config_dir / "logs.yaml").read_text())["sources"]
 
 
 @lru_cache

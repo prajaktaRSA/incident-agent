@@ -14,8 +14,9 @@ from incident_agent.apps.cli.console import console
 from incident_agent.audit import AuditLog
 from incident_agent.backends.mock import Scenario, load_scenario
 from incident_agent.backends.mock.triggers import load_trigger
-from incident_agent.config import load_topic_mapping
+from incident_agent.config import load_metrics_config, load_topic_mapping
 from incident_agent.intake import intake
+from incident_agent.investigation.extra_checks import LlmExtraCheckPlanner
 from incident_agent.investigation.graph import build_investigation_graph
 from incident_agent.investigation.models import Evidence
 from incident_agent.investigation.publish import format_questions_message, write_outbox
@@ -64,10 +65,13 @@ def investigate(
 
     audit = AuditLog(settings.logs_dir, request.id)
     audit.write("trigger", request=request.model_dump(mode="json"))
+    tools = build_mock_tools(data)
     graph = build_investigation_graph(
-        tools=build_mock_tools(data),
+        tools=tools,
         rca_writer=LlmRcaWriter(models),
+        extra_check_planner=LlmExtraCheckPlanner(models, tools),
         topics=load_topic_mapping(settings.config_dir),
+        metrics=load_metrics_config(settings.config_dir),
         settings=settings,
         audit=audit,
     )
@@ -92,9 +96,22 @@ def investigate(
                 elif node == "triage":
                     for h in payload["hypotheses"]:
                         console.print(f"  [magenta]◆[/] {h.category} [dim]score {h.score:.2f}[/]")
+                    status.update("[dim]searching runbooks…[/]")
+                elif node == "runbooks":
+                    console.print(_evidence_line(payload["evidence"][-1]))
                     status.update("[dim]writing RCA…[/]")
                 elif node == "write_rca":
-                    status.update("[dim]publishing…[/]")
+                    asked = payload["outcome"].rca.needs_more_checks
+                    if asked and not state.get("extra_round_done"):
+                        console.print(f"  [yellow]?[/] RCA asked for more checks: {'; '.join(asked)}")
+                    status.update("[dim]finishing…[/]")
+                elif node == "extra_checks":
+                    for evidence in payload.get("evidence", []):
+                        if evidence.check.startswith("extra_"):
+                            console.print(_evidence_line(evidence))
+                    if payload.get("hypotheses"):
+                        console.print(f"  [magenta]◆[/] re-ranked: {payload['hypotheses'][0].category}")
+                    status.update("[dim]rewriting RCA…[/]")
 
     outcome = state["outcome"]
     console.print(

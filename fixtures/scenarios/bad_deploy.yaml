@@ -1,0 +1,30 @@
+name: bad_deploy
+description: >
+  webhook-service was deployed 40 minutes ago (PR #482, new pooled HTTP client). Within minutes,
+  delivery failures and latency spiked for every site and consumer lag rose on all topics.
+  The delivery-failures alarm fired. Expected conclusion: BAD_DEPLOY.
+
+deployments:
+  - {service: webhook-service, at_min: -40, duration_min: 5, pr_number: 482,
+     pr_title: "Switch HTTP client to pooled async client", author: dev.sam, commit: 9f3c2ab}
+
+metrics:
+  - metric: webhook.delivery_failures
+    spikes: [{from_min: -33, value: 620}]
+  - metric: webhook.delivery_latency
+    spikes: [{from_min: -33, value: 9400}]
+  - metric: kafka.time_lag
+    spikes: [{from_min: -30, value: 240}]
+  - metric: kafka.max_offset_lag
+    spikes: [{from_min: -30, value: 4100}]
+
+logs:
+  - {tenant_id: acme, destination_id: wg_3532, status: 0, count: 140, from_min: -33,
+     event_types: [payment.succeeded, invoice.paid], time_taken_ms: [10000, 10000], level: ERROR,
+     msg: "delivery failed: connection pool exhausted (pool=async-v2), scheduling retry"}
+  - {tenant_id: globex, destination_id: wg_8812, status: 0, count: 110, from_min: -33,
+     event_types: [subscription.updated], time_taken_ms: [10000, 10000], level: ERROR,
+     msg: "delivery failed: connection pool exhausted (pool=async-v2), scheduling retry"}
+  - {tenant_id: initech, destination_id: wg_9001, status: 0, count: 90, from_min: -33,
+     event_types: [payment.succeeded], time_taken_ms: [10000, 10000], level: ERROR,
+     msg: "delivery failed: connection pool exhausted (pool=async-v2), scheduling retry"}

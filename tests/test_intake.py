@@ -131,6 +131,6 @@ def test_intake_routes_by_source():
     now = datetime.now(UTC)
     missing = intake(load_trigger(FIXTURES_DIR / "triggers" / "missing_fields.json", now), settings, now)
     assert _question_fields(missing) == ["site_id", "started_at", "event_type"]
-    alarm = intake(load_trigger(FIXTURES_DIR / "triggers" / "lag_alarm.json", now), settings, now)
+    alarm = intake(load_trigger(FIXTURES_DIR / "triggers" / "traffic_burst.json", now), settings, now)
     assert alarm.request.issue_type == "alarm"
     assert "Unsupported" in intake({"source": "email"}, settings, now).ignored

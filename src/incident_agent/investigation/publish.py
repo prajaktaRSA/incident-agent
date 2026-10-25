@@ -20,6 +20,8 @@ def format_rca_message(
     outcome: RcaOutcome,
     evidence: list[Evidence],
     duration_s: float,
+    *,
+    extra_checks: int = 0,
 ) -> str:
     rca = outcome.rca
     subject = request.site_id or (request.alarm.name if request.alarm else "service")
@@ -41,6 +43,8 @@ def format_rca_message(
     lines += ["", f"**Impact** {rca.impact}", "", "**Next steps**", *[f"- {s}" for s in rca.next_steps]]
     if rca.unknowns:
         lines += ["", "**Unknowns**", *[f"- {u}" for u in rca.unknowns]]
+    if rca.needs_more_checks:
+        lines += ["", "**Suggested follow-up checks**", *[f"- {c}" for c in rca.needs_more_checks]]
     if rca.runbooks:
         lines += ["", "**Runbooks** " + " · ".join(rca.runbooks)]
     if request.jira_url:
@@ -49,9 +53,10 @@ def format_rca_message(
     ran = sum(e.status == "ok" for e in evidence)
     not_run = len(evidence) - ran
     model = outcome.model or "no model (deterministic fallback)"
+    extra = f" (incl. {extra_checks} extra)" if extra_checks else ""
     lines += [
         "",
-        f"_{ran} checks run · {not_run} not available · {duration_s:.1f}s · {model} · "
+        f"_{ran} checks run{extra} · {not_run} failed or unavailable · {duration_s:.1f}s · {model} · "
         f"investigation {request.id}_",
     ]
     return "\n".join(lines) + "\n"

@@ -19,7 +19,7 @@ from incident_agent.investigation.prompts import RCA_SYSTEM_PROMPT
 from incident_agent.investigation.models import Category, Evidence, Hypothesis
 from incident_agent.llm import ChatModels, with_fallback
 
-MAX_DATA_CHARS_PER_CHECK = 6000
+MAX_DATA_CHARS_PER_CHECK = 8000
 
 
 class EvidenceItem(BaseModel):
@@ -39,6 +39,11 @@ class RCA(BaseModel):
     next_steps: list[str] = Field(description="Concrete internal actions for engineers.")
     unknowns: list[str] = Field(description="What couldn't be checked and what would settle it.")
     runbooks: list[str] = Field(default_factory=list, description="Runbook links from the evidence only.")
+    needs_more_checks: list[str] = Field(
+        default_factory=list,
+        description="Only if the evidence is ambiguous and extra checks are allowed: up to 3 specific "
+        "things to check next. Otherwise empty.",
+    )
 
 
 class RcaParseError(RuntimeError):
@@ -89,11 +94,12 @@ def write_rca(
     evidence: list[Evidence],
     hypotheses: list[Hypothesis],
     *,
+    extra_checks_allowed: bool = False,
     max_attempts: int = 2,
 ) -> RcaOutcome:
     messages: list[BaseMessage] = [
         SystemMessage(RCA_SYSTEM_PROMPT),
-        HumanMessage(build_bundle(request, evidence, hypotheses)),
+        HumanMessage(build_bundle(request, evidence, hypotheses, extra_checks_allowed=extra_checks_allowed)),
     ]
     problems: list[str] = []
     attempts = 0
@@ -144,7 +150,11 @@ def check_rca(rca: RCA, evidence: list[Evidence], hypotheses: list[Hypothesis]) 
 
 
 def build_bundle(
-    request: InvestigationRequest, evidence: list[Evidence], hypotheses: list[Hypothesis]
+    request: InvestigationRequest,
+    evidence: list[Evidence],
+    hypotheses: list[Hypothesis],
+    *,
+    extra_checks_allowed: bool = False,
 ) -> str:
     bundle: dict[str, Any] = {
         "investigation": {
@@ -172,6 +182,7 @@ def build_bundle(
             if e.status != "ok"
         ],
         "triage_hypotheses": [h.model_dump(mode="json") for h in hypotheses],
+        "extra_checks_allowed": extra_checks_allowed,
     }
     return json.dumps(bundle, indent=1, default=str)
 

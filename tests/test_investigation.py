@@ -12,7 +12,7 @@ from incident_agent.apps import cli
 from incident_agent.audit import AuditLog
 from incident_agent.backends.mock import load_scenario
 from incident_agent.backends.mock.triggers import load_trigger
-from incident_agent.config import load_topic_mapping
+from incident_agent.config import load_metrics_config, load_topic_mapping
 from incident_agent.intake import intake
 from incident_agent.investigation.graph import build_investigation_graph
 from incident_agent.investigation.models import Category
@@ -51,14 +51,14 @@ def test_merchant_down_from_slack_form_to_outbox(settings):
     audit = AuditLog(settings.logs_dir, request.id)
     graph = build_investigation_graph(
         tools=build_mock_tools(scenario), rca_writer=EchoTopHypothesis(),
-        topics=load_topic_mapping(settings.config_dir), settings=settings, audit=audit,
+        topics=load_topic_mapping(settings.config_dir), metrics=load_metrics_config(), settings=settings, audit=audit,
     )
 
     state = graph.invoke({"request": request, "started_at": time.perf_counter()})
 
     evidence = {e.check: e for e in state["evidence"]}
-    assert evidence["failed_events"].status == "ok"
-    assert evidence["deployments"].status == "skipped"  # arrives in M2
+    assert all(e.status == "ok" for e in evidence.values()), {c: e.summary for c, e in evidence.items()}
+    assert evidence["runbooks"].data["results"][0]["path"] == "docs/merchant-endpoint-5xx.md"
     assert state["hypotheses"][0].category == Category.MERCHANT_ENDPOINT_DOWN
 
     message = (settings.outbox_dir / f"{request.id}.md").read_text()
@@ -66,7 +66,7 @@ def test_merchant_down_from_slack_form_to_outbox(settings):
     assert "Automated RCA — internal" in message
     assert "`MERCHANT_ENDPOINT_DOWN`" in message
     assert "SUP-4821" in message  # Jira link shown for reference
-    assert "1 checks run" in message
+    assert f"{len(evidence)} checks run · 0 failed or unavailable" in message
 
     record = json.loads((settings.records_dir / f"{request.id}.json").read_text())
     assert record["rca"]["category"] == "MERCHANT_ENDPOINT_DOWN"

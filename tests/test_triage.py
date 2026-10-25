@@ -93,3 +93,42 @@ def test_failed_check_means_undetermined_with_it_missing():
     (top,) = triage([error], REQUEST)
     assert top.category == Category.UNDETERMINED
     assert top.missing_checks == ["failed_events"]
+
+
+def _metric(check: str, metric: str, status: str = "normal", spikes: list | None = None, **dims) -> Evidence:
+    return Evidence(
+        check=check, tool="get_cloudwatch_metric", args={}, purpose="", status="ok", summary="",
+        data={"metric": metric, "status": status, "spikes": spikes or [], "max": 900, "baseline": 2,
+              "dimensions": dims, "points": [["t", 1]]},
+    )
+
+
+def test_not_subscribed_only_for_not_received():
+    config = Evidence(check="webhook_config", tool="t", args={}, purpose="", status="ok", summary="",
+                      data={"site_id": "acme", "endpoints": [{"destination_id": "wg_1", "event_types": ["payment.succeeded"]}]})
+    failing = REQUEST.model_copy(update={"event_type": "invoice.paid"})
+    not_received = REQUEST.model_copy(update={"event_type": "invoice.paid", "issue_type": "not_received"})
+    assert _categories(triage([config], failing)) == [Category.UNDETERMINED]
+    assert _categories(triage([config], not_received)) == [Category.NOT_SUBSCRIBED]
+
+
+def test_consumer_lag_is_suppressed_when_failures_spike_too():
+    lag = _metric("lag_payment-events", "kafka.time_lag", "critical", Topic="payment-events")
+    calm = _metric("delivery_failures", "webhook.delivery_failures")
+    spiking = _metric("delivery_failures", "webhook.delivery_failures", "critical", spikes=[{"start": "2026-10-25T14:00:00Z"}])
+    assert _categories(triage([lag, calm], REQUEST)) == [Category.CONSUMER_LAG]
+    assert Category.CONSUMER_LAG not in _categories(triage([lag, spiking], REQUEST))
+
+
+def test_offset_lag_with_high_time_lag_is_not_a_burst():
+    offset = _metric("alarm_metric", "kafka.max_offset_lag", "critical", Topic="payment-events")
+    time_lag = _metric("kafka_time_lag", "kafka.time_lag", "critical", Topic="payment-events")
+    assert Category.TRAFFIC_BURST not in _categories(triage([offset, time_lag], REQUEST))
+
+
+def test_deploy_long_before_the_spike_is_not_blamed():
+    deploys = Evidence(check="deployments", tool="t", args={}, purpose="", status="ok", summary="", data={"deployments": [
+        {"service": "webhook-service", "started_at": "2026-10-25T10:00:00+00:00", "finished_at": "2026-10-25T10:05:00+00:00",
+         "conclusion": "success", "pr": None}]})
+    spike = _metric("delivery_failures", "webhook.delivery_failures", "critical", spikes=[{"start": "2026-10-25T14:00:00+00:00"}])
+    assert Category.BAD_DEPLOY not in _categories(triage([deploys, spike], REQUEST))

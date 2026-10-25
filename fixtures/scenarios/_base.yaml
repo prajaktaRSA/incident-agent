@@ -1,0 +1,52 @@
+# A healthy platform. Every scenario is layered on top of this file:
+# list sections are appended, mapping sections (webhook_config, metric_baselines) are merged with
+# the scenario winning. Offsets are minutes relative to now.
+name: _base
+
+webhook_config:
+  acme:
+    - destination_id: wg_3532
+      url: https://hooks.acme.com/billing/events?token=acme_live_9f8e7d
+      event_types: [payment.succeeded, payment.refunded, subscription.renewed, invoice.created, invoice.paid]
+    - destination_id: wg_7710
+      url: https://crm.acme.com/webhooks/customers
+      event_types: [customer.created, customer.updated, customer.deleted]
+  globex:
+    - destination_id: wg_8812
+      url: https://api.globex.io/hooks
+      event_types: [subscription.created, subscription.updated, subscription.cancelled]
+  initech:
+    - destination_id: wg_9001
+      url: https://initech.example/payments/webhook
+      event_types: [payment.succeeded, payment.failed, payment.refunded]
+  umbrella: []
+
+# Healthy level of each metric per period (any dimensions). Scenarios add spikes in `metrics`.
+metric_baselines:
+  kafka.max_offset_lag: 40
+  kafka.sum_offset_lag: 120
+  kafka.time_lag: 2
+  webhook.delivery_attempts: 1200
+  webhook.delivery_failures: 15
+  webhook.delivery_latency: 350
+  webhook.config_fetch_errors: 0
+  config_api.errors: 0.5
+  config_api.latency: 45
+  ecs.cpu: 35
+  ecs.memory: 52
+
+# Background traffic for other sites, so service-wide searches aren't empty.
+logs:
+  - {tenant_id: globex, destination_id: wg_8812, status: 200, count: 150, from_min: -360,
+     event_types: [subscription.created, subscription.updated], time_taken_ms: [90, 300]}
+  - {tenant_id: initech, destination_id: wg_9001, status: 200, count: 150, from_min: -360,
+     event_types: [payment.succeeded, payment.refunded], time_taken_ms: [120, 400]}
+  - {tenant_id: initech, destination_id: wg_9001, status: 500, count: 4, from_min: -300, to_min: -240,
+     event_types: [payment.succeeded], time_taken_ms: [100, 200], level: ERROR}
+
+# Last routine deploys, well before any investigation window.
+deployments:
+  - {service: webhook-service, at_min: -1250, pr_number: 471, pr_title: "Bump retry jitter to 20%",
+     author: dev.lee, commit: 4be91c0}
+  - {service: events-service, at_min: -1500, pr_number: 1290, pr_title: "Add invoice.overdue event",
+     author: dev.ana, commit: a71f3d2}
