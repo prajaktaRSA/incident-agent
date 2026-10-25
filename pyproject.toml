@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.scripts]
-incident-agent = "incident_agent.cli:app"
+incident-agent = "incident_agent.apps.cli:app"
 
 [build-system]
 requires = ["uv_build>=0.13.5,<0.14.0"]

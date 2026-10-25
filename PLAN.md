@@ -504,22 +504,45 @@ Alarm trigger fixture (SNS-style):
 
 ## 14. Project layout
 
+Code that decides (plain code), code that calls the LLM, code that fetches data and code that
+receives triggers live apart, so most of the system is tested without an LLM.
+
 ```
 incident-agent/
   pyproject.toml  .env.example
-  config/  metrics.yaml  topic_mapping.yaml  logs.yaml  sites.yaml
+  config/                    # committed, non-secret: metrics.yaml topic_mapping.yaml logs.yaml sites.yaml
   src/incident_agent/
-    settings.py  llm.py  redact.py  audit.py
-    intake/       models.py (InvestigationRequest)  slack_form.py  alarm.py  validate.py  questions.py
-    investigation/ graph.py  playbooks.py  triage.py  rca.py (schema + prompt + checks)  publish.py
-    tools/        one module per tool
-    backends/     base.py  mock/  (real/ post-MVP)
-    chat/         graph.py (M0 chat agent)
-    cli.py        investigate · eval · chat · models
+    settings.py              # env vars and secrets (.env, git-ignored)
+    config.py                # loaders for config/
+    llm.py                   # model factory, fallback
+    redact.py  audit.py
+    intake/                  # triggers → InvestigationRequest; fixed questions (no LLM)
+      models.py  slack_form.py  alarm.py  questions.py
+    investigation/           # the trigger-driven workflow
+      graph.py  models.py  playbooks.py  gather.py  triage.py
+      rca.py (schema + output checks)  prompts.py  publish.py
+    chat/                    # the debugging chat workflow: graph.py  prompts.py
+    tools/                   # what playbooks and the LLM call: input schema, guardrails, summaries
+      runner.py              #   shared execution: timing, errors, audit
+      <one module per tool>
+    backends/                # data access only, behind interfaces
+      base.py                #   Protocols
+      mock/                  #   scenario-driven fake data and trigger fixtures
+      aws/                   #   post-MVP: DynamoDB, CloudWatch metrics + alarms, ECS, Secrets Manager
+      logs/                  #   post-MVP: cloudwatch.py (Logs Insights), splunk.py
+      github/                #   post-MVP: deploy workflow runs, PRs
+      config_api/            #   post-MVP: internal webhook-config API client
+    apps/                    # entry points only: parse input, call a workflow
+      cli/                   #   __init__.py (Typer app) investigate.py chat.py list_models.py (eval.py in M3)
+      slack/                 #   post-MVP: Slack app (form messages, thread replies)
+      worker/                #   post-MVP: queue consumer for alarms
   fixtures/
     scenarios/<name>.yaml    triggers/<name>.json    runbooks/
-  outbox/  records/  logs/   # git-ignored
-  tests/
+  evals/                     # agent quality, not code correctness
+    expectations.yaml        #   expected outcome per scenario
+    reports/                 #   per-run results (git-ignored)
+  tests/                     # code correctness, scripted LLM
+  outbox/  records/  logs/   # generated, git-ignored
 ```
 
 ---

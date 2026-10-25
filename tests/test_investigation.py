@@ -8,7 +8,7 @@ import pytest
 from typer.testing import CliRunner
 
 from conftest import FIXTURES_DIR
-from incident_agent import cli
+from incident_agent.apps import cli
 from incident_agent.audit import AuditLog
 from incident_agent.backends.mock import load_scenario
 from incident_agent.backends.mock.triggers import load_trigger
