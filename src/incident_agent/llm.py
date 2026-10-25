@@ -10,6 +10,7 @@ from langchain_core.exceptions import (
     ModelTimeoutError,
 )
 from langchain_core.language_models import BaseChatModel
+from langchain_core.runnables import Runnable
 
 from incident_agent.settings import Settings
 
@@ -46,6 +47,13 @@ def build_chat_models(settings: Settings) -> ChatModels:
             fallback=_gemini(settings, fallback) if fallback else None,
         )
     raise ValueError(f"Unsupported LLM provider: {settings.llm_provider}")
+
+
+def with_fallback(primary: Runnable, fallback: Runnable | None) -> Runnable:
+    """Use `fallback` when `primary` fails with a transient error."""
+    if fallback is None:
+        return primary
+    return primary.with_fallbacks([fallback], exceptions_to_handle=TRANSIENT_LLM_ERRORS)
 
 
 def _gemini(settings: Settings, model: str) -> BaseChatModel:

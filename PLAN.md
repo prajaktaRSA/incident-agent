@@ -529,7 +529,7 @@ incident-agent/
 | # | Deliverable | Done when |
 |---|---|---|
 | **M0 ✅** | Scaffold, Gemini with fallback, chat graph, `query_failed_events`, `merchant_down` data, terminal chat | Done: 29 tests pass; live chat answered correctly |
-| **M1** | Trigger pipeline: `InvestigationRequest`, Slack-form and alarm parsing, validation and hardcoded questions, playbook selection, parallel gather, triage (failure rules), structured RCA, outbox and record. `investigate` command. | `merchant_down` (Slack trigger) and `missing_fields` work end to end |
+| **M1 ✅** | Trigger pipeline: `InvestigationRequest`, Slack-form and alarm parsing, validation and hardcoded questions, playbook selection, parallel gather, triage (failure rules), structured RCA, outbox and record. `investigate` command. | Done: 77 tests pass; live Gemini run on `merchant_down` gave `MERCHANT_ENDPOINT_DOWN` in ~12s; `missing_fields` asks its 3 questions; the alarm trigger degrades to `UNDETERMINED` until M2's tools exist |
 | **M2** | Remaining mocked tools: config, `lookup_events`, metrics and alarms, deployments, logs, runbooks. All triage rules. Extra-checks loop. | Every scenario in §12 runs and produces an RCA |
 | **M3** | `eval` command (expected category and key evidence per scenario), RCA output checks, dedupe, time limits, unit tests for every rule | All scenarios reach the expected category; tests pass |
 | **M4** *(post-MVP)* | Slack app in a test workspace; alarm subscription; real backends in staging | A real form submission gets an RCA in its thread |

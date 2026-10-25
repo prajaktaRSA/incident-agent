@@ -9,7 +9,7 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.checkpoint.memory import InMemorySaver
 
 from incident_agent.audit import AuditLog
-from incident_agent.graph import build_graph
+from incident_agent.chat.graph import build_graph
 from incident_agent.tools import build_mock_tools
 
 

@@ -1,0 +1,16 @@
+{
+  "source": "slack_form",
+  "channel": "C0WEBHOOKS",
+  "ts": "1729861234.000100",
+  "reported_by": "se.jane",
+  "fields": {
+    "site_id": "acme",
+    "issue_type": "failing",
+    "started_at": "-95m",
+    "event_type": null,
+    "event_ids": [],
+    "destination_id": null,
+    "description": "Customer says payment and invoice webhooks are failing since this morning.",
+    "jira_url": "https://example.atlassian.net/browse/SUP-4821"
+  }
+}

@@ -29,10 +29,16 @@ class Settings(BaseSettings):
     google_api_key: SecretStr | None = Field(default=None, alias="GOOGLE_API_KEY")
 
     mock_scenario: str = "merchant_down"
+    config_dir: Path = PROJECT_ROOT / "config"
     fixtures_dir: Path = PROJECT_ROOT / "fixtures"
     logs_dir: Path = PROJECT_ROOT / "logs"
+    outbox_dir: Path = PROJECT_ROOT / "outbox"
+    records_dir: Path = PROJECT_ROOT / "records"
 
     max_tool_calls_per_turn: int = 15
+    check_timeout_seconds: float = 20
+    # Channel for RCAs triggered by alarms (form-triggered RCAs reply in the form's thread).
+    incidents_channel: str = "#webhook-incidents"
 
 
 @lru_cache

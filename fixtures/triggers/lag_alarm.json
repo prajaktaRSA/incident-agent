@@ -1,0 +1,16 @@
+{
+  "source": "cloudwatch_alarm",
+  "AlarmName": "webhook-delivery-cg-time-lag-critical",
+  "NewStateValue": "ALARM",
+  "StateChangeTime": "-5m",
+  "Trigger": {
+    "Namespace": "AWS/Kafka",
+    "MetricName": "EstimatedMaxTimeLag",
+    "Threshold": 120,
+    "Dimensions": [
+      { "name": "Cluster Name", "value": "events-msk-stg" },
+      { "name": "Consumer Group", "value": "webhook-delivery-cg" },
+      { "name": "Topic", "value": "payment-events" }
+    ]
+  }
+}

@@ -1,0 +1,3 @@
+# Known site IDs for intake validation (mock). In production this comes from the internal
+# webhook-config API, where an unknown site returns 404.
+sites: [acme, globex, initech, umbrella]

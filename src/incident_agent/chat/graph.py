@@ -1,21 +1,18 @@
-"""The investigation graph: an agent node and a tools node, looping until the agent answers."""
+"""The chat graph: an agent node and a tools node, looping until the agent answers."""
 
-import json
-import time
 from typing import Annotated, Any, TypedDict
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
-from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph, add_messages
 from langgraph.graph.state import CompiledStateGraph
 
 from incident_agent.audit import AuditLog
-from incident_agent.llm import TRANSIENT_LLM_ERRORS
-from incident_agent.prompts import SYSTEM_PROMPT, TOOL_BUDGET_EXHAUSTED
-from incident_agent.redact import redact
+from incident_agent.chat.prompts import SYSTEM_PROMPT, TOOL_BUDGET_EXHAUSTED
+from incident_agent.llm import with_fallback
+from incident_agent.tools.runner import run_tool_call
 
 
 class AgentState(TypedDict):
@@ -33,10 +30,10 @@ def build_graph(
     checkpointer: BaseCheckpointSaver | None = None,
     audit: AuditLog | None = None,
 ) -> CompiledStateGraph:
-    model_with_tools = _with_fallback(
+    model_with_tools = with_fallback(
         model.bind_tools(tools), fallback_model.bind_tools(tools) if fallback_model else None
     )
-    answer_only_model = _with_fallback(model, fallback_model)
+    answer_only_model = with_fallback(model, fallback_model)
     tools_by_name = {t.name: t for t in tools}
 
     def agent(state: AgentState) -> dict[str, Any]:
@@ -52,30 +49,9 @@ def build_graph(
         used = state.get("tool_calls_used", 0)
         results: list[ToolMessage] = []
         for call in last.tool_calls:
-            started = time.perf_counter()
-            if used >= max_tool_calls:
-                message = _error_message(call, "Tool budget for this turn is exhausted.")
-            elif call["name"] not in tools_by_name:
-                message = _error_message(call, f"Unknown tool '{call['name']}'.")
-            else:
-                try:
-                    message = tools_by_name[call["name"]].invoke(call)
-                except Exception as exc:  # bad arguments from the model, or a backend failure
-                    message = _error_message(call, redact(f"{type(exc).__name__}: {exc}"))
+            refuse = "Tool budget for this turn is exhausted." if used >= max_tool_calls else None
+            results.append(run_tool_call(tools_by_name, call, audit, refuse=refuse))
             used += 1
-            artifact = dict(message.artifact or {})
-            artifact["duration_ms"] = round((time.perf_counter() - started) * 1000)
-            message.artifact = artifact
-            if audit:
-                audit.write(
-                    "tool_call",
-                    tool=call["name"],
-                    args=call["args"],
-                    ok=artifact.get("ok", False),
-                    summary=artifact.get("summary"),
-                    duration_ms=artifact["duration_ms"],
-                )
-            results.append(message)
         return {"messages": results, "tool_calls_used": used}
 
     def route(state: AgentState) -> str:
@@ -89,18 +65,3 @@ def build_graph(
     graph.add_conditional_edges("agent", route, ["tools", END])
     graph.add_edge("tools", "agent")
     return graph.compile(checkpointer=checkpointer)
-
-
-def _with_fallback(primary: Runnable, fallback: Runnable | None) -> Runnable:
-    if fallback is None:
-        return primary
-    return primary.with_fallbacks([fallback], exceptions_to_handle=TRANSIENT_LLM_ERRORS)
-
-
-def _error_message(call: dict[str, Any], error: str) -> ToolMessage:
-    return ToolMessage(
-        content=json.dumps({"error": error}),
-        tool_call_id=call["id"],
-        name=call["name"],
-        artifact={"ok": False, "summary": error},
-    )
