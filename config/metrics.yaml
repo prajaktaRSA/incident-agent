@@ -1,0 +1,99 @@
+# CloudWatch metric allowlist. Tools only query metrics listed here, by key.
+# Names marked "assumed" are placeholders until the real ones are confirmed (PLAN.md §16).
+#
+#   namespace / name   CloudWatch namespace and metric name
+#   stat               default statistic
+#   unit               for display
+#   dimensions         dimension names the metric is published with
+#   alarms             thresholds the alarms on this metric use (read from CloudWatch in real mode)
+#   min_spike          smallest increase over baseline that counts as a spike (filters noise)
+
+metrics:
+  kafka.max_offset_lag:
+    namespace: AWS/Kafka
+    name: MaxOffsetLag
+    stat: Maximum
+    unit: messages
+    dimensions: [Cluster Name, Consumer Group, Topic]
+    alarms: {warning: 500, critical: 2000}
+    min_spike: 300
+  kafka.sum_offset_lag:
+    namespace: AWS/Kafka
+    name: SumOffsetLag
+    stat: Maximum
+    unit: messages
+    dimensions: [Cluster Name, Consumer Group, Topic]
+    alarms: {warning: 2000, critical: 10000}  # assumed
+    min_spike: 1000
+  kafka.time_lag:
+    namespace: AWS/Kafka
+    name: EstimatedMaxTimeLag
+    stat: Maximum
+    unit: seconds
+    dimensions: [Cluster Name, Consumer Group, Topic]
+    alarms: {warning: 30, critical: 120}
+    min_spike: 20
+  webhook.delivery_attempts:
+    namespace: WebhookService  # assumed
+    name: DeliveryAttempts
+    stat: Sum
+    unit: attempts / period
+    dimensions: [Environment]
+    alarms: null
+    min_spike: 1000
+  webhook.delivery_failures:
+    namespace: WebhookService  # assumed
+    name: DeliveryFailures
+    stat: Sum
+    unit: failures / period
+    dimensions: [Environment, StatusClass]
+    alarms: {warning: 150, critical: 400}  # assumed
+    min_spike: 60
+  webhook.delivery_latency:
+    namespace: WebhookService  # assumed
+    name: DeliveryLatencyMs
+    stat: p99
+    unit: ms
+    dimensions: [Environment]
+    alarms: {warning: 3000, critical: 8000}  # assumed
+    min_spike: 1500
+  webhook.config_fetch_errors:
+    namespace: WebhookService  # assumed
+    name: ConfigFetchErrors
+    stat: Sum
+    unit: errors / period
+    dimensions: [Environment, StatusCode]
+    alarms: {warning: 20, critical: 100}  # assumed
+    min_spike: 10
+  config_api.errors:
+    namespace: EventsService  # assumed
+    name: WebhookConfigApi5xx
+    stat: Sum
+    unit: errors / period
+    dimensions: [Environment]
+    alarms: {warning: 20, critical: 100}  # assumed
+    min_spike: 10
+  config_api.latency:
+    namespace: EventsService  # assumed
+    name: WebhookConfigApiLatencyMs
+    stat: p99
+    unit: ms
+    dimensions: [Environment]
+    alarms: {warning: 500, critical: 2000}  # assumed
+    min_spike: 300
+  ecs.cpu:
+    namespace: AWS/ECS
+    name: CPUUtilization
+    stat: Average
+    unit: percent
+    dimensions: [ClusterName, ServiceName]
+    alarms: null
+    min_spike: 30
+  ecs.memory:
+    namespace: AWS/ECS
+    name: MemoryUtilization
+    stat: Average
+    unit: percent
+    dimensions: [ClusterName, ServiceName]
+    alarms: null
+    min_spike: 30

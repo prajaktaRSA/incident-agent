@@ -1,0 +1,38 @@
+name: still_retrying
+description: >
+  acme says event evt_rtry4x9q2m (payment.succeeded) hasn't arrived. It has failed 3 times with
+  503 and is waiting for its next retry. Expected conclusion: STILL_RETRYING.
+
+event_histories:
+  - event_id: evt_rtry4x9q2m
+    tenant_id: acme
+    event_type: payment.succeeded
+    destination_id: wg_3532
+    topic: payment-events
+    published_min: -41
+    attempts:
+      - {at_min: -40, status: 503, time_taken_ms: 380}
+      - {at_min: -38, status: 503, time_taken_ms: 402}
+      - {at_min: -30, status: 503, time_taken_ms: 395}
+
+failed_items:
+  - event_id: evt_rtry4x9q2m
+    tenant_id: acme
+    destination_id: wg_3532
+    event_type: payment.succeeded
+    status: 503
+    message: Service Unavailable
+    retry_attempts: 3
+    created_min: -40
+    failed_min: -30
+
+# A few other intermittent 503s on the same endpoint (below the noise threshold).
+failed_events:
+  - {tenant_id: acme, destination_id: wg_3532, status: 503, message: Service Unavailable, count: 12,
+     from_min: -45, event_types: [payment.succeeded, invoice.paid], retry_attempts: [1, 3]}
+
+logs:
+  - {tenant_id: acme, destination_id: wg_3532, status: 200, count: 160, from_min: -360,
+     event_types: [payment.succeeded, invoice.paid], time_taken_ms: [150, 450]}
+  - {tenant_id: acme, destination_id: wg_3532, status: 503, count: 18, from_min: -45,
+     event_types: [payment.succeeded, invoice.paid], time_taken_ms: [300, 600], attempt: [1, 3]}

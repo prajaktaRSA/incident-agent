@@ -1,0 +1,96 @@
+# What a correct investigation concludes for each scenario (PLAN.md §12).
+# The M3 `incident-agent eval` command runs every trigger, then scores the RCA against this file.
+#
+#   trigger:            fixtures/triggers/<trigger>.json
+#   scenario:           fixtures/scenarios/<scenario>.yaml (mock data)
+#   category:           expected RCA category
+#   min_confidence:     lowest acceptable confidence
+#   must_cite:          checks the RCA evidence must cite
+#   must_mention:       substrings that must appear in the RCA (IDs, statuses)
+#   questions:          for intake-only scenarios, the fields that must be asked about
+#
+# All scenarios have data and tools as of M2. `tests/test_scenarios.py` checks each one's triage
+# result without an LLM; the M3 eval runner checks the LLM-written RCA.
+
+scenarios:
+  merchant_down:
+    ready: true
+    trigger: merchant_down
+    scenario: merchant_down
+    category: MERCHANT_ENDPOINT_DOWN
+    min_confidence: medium
+    must_cite: [failed_events]
+    must_mention: [wg_3532, "503"]
+
+  not_subscribed:
+    ready: true
+    trigger: not_subscribed
+    scenario: not_subscribed
+    category: NOT_SUBSCRIBED
+    min_confidence: high
+    must_cite: [webhook_config]
+    must_mention: [invoice.paid]
+
+  delivered_ok:
+    ready: true
+    trigger: delivered_ok
+    scenario: delivered_ok
+    category: DELIVERED_OK
+    min_confidence: high
+    must_cite: [event_history]
+    must_mention: [request_id]
+
+  still_retrying:
+    ready: true
+    trigger: still_retrying
+    scenario: still_retrying
+    category: STILL_RETRYING
+    min_confidence: high
+    must_cite: [event_history, event_state]
+
+  not_consumed:
+    ready: true
+    trigger: not_consumed
+    scenario: not_consumed
+    category: NOT_CONSUMED
+    min_confidence: medium
+    must_cite: [event_history]
+
+  bad_deploy:
+    ready: true
+    trigger: bad_deploy
+    scenario: bad_deploy
+    category: BAD_DEPLOY
+    min_confidence: medium
+    must_cite: [deployments, delivery_failures]
+
+  config_api_auth:
+    ready: true
+    trigger: config_api_auth
+    scenario: config_api_auth
+    category: CONFIG_FETCH_FAILURE
+    min_confidence: high
+    must_cite: [failed_events]
+    must_mention: ["401"]
+
+  traffic_burst:
+    ready: true
+    trigger: traffic_burst
+    scenario: traffic_burst
+    category: TRAFFIC_BURST
+    min_confidence: medium
+    must_cite: [alarm_metric]
+
+  rate_limited:
+    ready: true
+    trigger: rate_limited
+    scenario: rate_limited
+    category: MERCHANT_RATE_LIMITING
+    min_confidence: medium
+    must_cite: [failed_events]
+    must_mention: ["429"]
+
+  missing_fields:
+    ready: true
+    trigger: missing_fields
+    questions: [site_id, started_at, event_type]

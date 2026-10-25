@@ -1,0 +1,25 @@
+name: rate_limited
+description: >
+  acme says webhooks are arriving late. For the last hour their endpoint wg_3532 has answered
+  about a third of deliveries with 429 Too Many Requests; those deliveries go through the
+  rate-limit topic, whose consumer is now minutes behind. Expected conclusion: MERCHANT_RATE_LIMITING.
+
+failed_events:
+  - {tenant_id: acme, destination_id: wg_3532, status: 429, message: Too Many Requests, count: 86,
+     from_min: -60, event_types: [payment.succeeded, invoice.paid, subscription.renewed],
+     retry_attempts: [1, 3]}
+
+metrics:
+  - metric: kafka.time_lag
+    dimensions: {Topic: webhook-ratelimited-events}
+    spikes: [{from_min: -55, value: 340}]
+  - metric: kafka.max_offset_lag
+    dimensions: {Topic: webhook-ratelimited-events}
+    spikes: [{from_min: -55, value: 2600}]
+
+logs:
+  - {tenant_id: acme, destination_id: wg_3532, status: 200, count: 180, from_min: -60,
+     event_types: [payment.succeeded, invoice.paid], time_taken_ms: [150, 450]}
+  - {tenant_id: acme, destination_id: wg_3532, status: 429, count: 95, from_min: -60,
+     event_types: [payment.succeeded, invoice.paid], time_taken_ms: [20, 60], attempt: [1, 3],
+     msg: "delivery failed: 429 Too Many Requests (Retry-After: 120), routed to rate-limit topic"}

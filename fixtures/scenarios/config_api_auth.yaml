@@ -1,0 +1,27 @@
+name: config_api_auth
+description: >
+  events-service was deployed 50 minutes ago (PR #1302, rotating internal API caller keys). Since
+  then webhook-service gets 401 from the internal config API and sends events straight to the DLQ
+  as CONFIG_FETCH_ERROR, for acme and other sites. Expected conclusion: CONFIG_FETCH_FAILURE.
+
+deployments:
+  - {service: events-service, at_min: -50, duration_min: 4, pr_number: 1302,
+     pr_title: "Rotate internal API caller keys", author: dev.ana, commit: c0ffee1}
+
+dlq_events:
+  - {tenant_id: acme, failure_type: CONFIG_FETCH_ERROR, status: 401, count: 64, from_min: -44,
+     message: "webhook-config API returned 401 Unauthorized (Authorization: Basic d2ViaG9vazpzZWNyZXQ=)",
+     event_types: [invoice.paid, payment.succeeded, subscription.renewed]}
+  - {tenant_id: globex, failure_type: CONFIG_FETCH_ERROR, status: 401, count: 41, from_min: -44,
+     message: "webhook-config API returned 401 Unauthorized", event_types: [subscription.updated]}
+
+metrics:
+  - metric: webhook.config_fetch_errors
+    spikes: [{from_min: -44, value: 310}]
+
+logs:
+  - {tenant_id: acme, status: 401, count: 64, from_min: -44, level: ERROR,
+     event_types: [invoice.paid, payment.succeeded],
+     msg: "config fetch failed: webhook-config API returned 401 Unauthorized; event sent to DLQ"}
+  - {tenant_id: acme, destination_id: wg_3532, status: 200, count: 120, from_min: -360, to_min: -45,
+     event_types: [payment.succeeded, invoice.paid], time_taken_ms: [150, 450]}

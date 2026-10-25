@@ -1,0 +1,16 @@
+{
+  "source": "slack_form",
+  "channel": "C0WEBHOOKS",
+  "ts": "1729861800.000800",
+  "reported_by": "se.jane",
+  "fields": {
+    "site_id": "acme",
+    "event_type": null,
+    "event_ids": [],
+    "destination_id": null,
+    "jira_url": null,
+    "issue_type": "delayed",
+    "started_at": "-60m",
+    "description": "Customer says webhooks arrive 5-10 minutes late since about an hour ago."
+  }
+}

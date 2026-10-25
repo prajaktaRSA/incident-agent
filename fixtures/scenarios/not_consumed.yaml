@@ -1,0 +1,26 @@
+name: not_consumed
+description: >
+  acme says event evt_nc0nsm3d7x (payment.succeeded) never arrived. events-service published it
+  25 minutes ago, but webhook-service has no log of it: the consumer on payment-events is lagging
+  by ~15 minutes. Expected conclusion: NOT_CONSUMED.
+
+event_histories:
+  - event_id: evt_nc0nsm3d7x
+    tenant_id: acme
+    event_type: payment.succeeded
+    destination_id: wg_3532
+    topic: payment-events
+    published_min: -25
+    attempts: []
+
+metrics:
+  - metric: kafka.time_lag
+    dimensions: {Topic: payment-events}
+    spikes: [{from_min: -32, value: 900}]
+  - metric: kafka.max_offset_lag
+    dimensions: {Topic: payment-events}
+    spikes: [{from_min: -32, value: 6200}]
+
+logs:
+  - {tenant_id: acme, destination_id: wg_3532, status: 200, count: 140, from_min: -360, to_min: -33,
+     event_types: [payment.succeeded, invoice.paid], time_taken_ms: [150, 450]}

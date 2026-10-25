@@ -1,0 +1,20 @@
+name: not_subscribed
+description: >
+  acme says invoice.paid webhooks stopped. Their endpoint was reconfigured and is no longer
+  subscribed to invoice.paid, so webhook-service filters those events out. No failures.
+  Expected conclusion: NOT_SUBSCRIBED.
+
+webhook_config:
+  acme:
+    - destination_id: wg_3532
+      url: https://hooks.acme.com/billing/events?token=acme_live_9f8e7d
+      event_types: [payment.succeeded, payment.refunded, subscription.renewed, invoice.created]
+    - destination_id: wg_7710
+      url: https://crm.acme.com/webhooks/customers
+      event_types: [customer.created, customer.updated, customer.deleted]
+
+logs:
+  - {tenant_id: acme, destination_id: wg_3532, status: 200, count: 140, from_min: -360,
+     event_types: [payment.succeeded, subscription.renewed], time_taken_ms: [150, 400]}
+  - {tenant_id: acme, status: null, count: 46, from_min: -200, event_types: [invoice.paid],
+     msg: "event filtered: no endpoint subscribed to event type"}

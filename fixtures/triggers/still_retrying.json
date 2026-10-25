@@ -1,0 +1,18 @@
+{
+  "source": "slack_form",
+  "channel": "C0WEBHOOKS",
+  "ts": "1729861500.000500",
+  "reported_by": "se.jane",
+  "fields": {
+    "site_id": "acme",
+    "event_type": "payment.succeeded",
+    "event_ids": [
+      "evt_rtry4x9q2m"
+    ],
+    "destination_id": null,
+    "jira_url": null,
+    "issue_type": "not_received",
+    "started_at": "-45m",
+    "description": "Payment webhook missing for a payment made ~45 minutes ago."
+  }
+}

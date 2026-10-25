@@ -1,0 +1,22 @@
+# Event type -> Kafka topic, mirroring the producer's mapping in events-service.
+# Retry and rate-limit topics are internal to webhook-service and carry no event types of their own.
+cluster: events-msk-stg
+topics:
+  subscription-events:
+    consumer_group: webhook-delivery-cg
+    event_types: [subscription.created, subscription.updated, subscription.renewed, subscription.cancelled]
+  payment-events:
+    consumer_group: webhook-delivery-cg
+    event_types: [payment.succeeded, payment.failed, payment.refunded]
+  invoice-events:
+    consumer_group: webhook-delivery-cg
+    event_types: [invoice.created, invoice.paid, invoice.overdue]
+  customer-events:
+    consumer_group: webhook-delivery-cg
+    event_types: [customer.created, customer.updated, customer.deleted]
+  webhook-retry-events:
+    consumer_group: webhook-retry-cg
+    event_types: []
+  webhook-ratelimited-events:
+    consumer_group: webhook-ratelimit-cg
+    event_types: []

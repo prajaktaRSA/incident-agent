@@ -1,0 +1,22 @@
+name: delivered_ok
+description: >
+  acme says event evt_dlvrd8k2q7 (invoice.paid) never arrived. The first attempt got a 503, the
+  retry a minute later returned 200. Expected conclusion: DELIVERED_OK, with the request_id the
+  merchant can look up.
+
+event_histories:
+  - event_id: evt_dlvrd8k2q7
+    tenant_id: acme
+    event_type: invoice.paid
+    destination_id: wg_3532
+    topic: invoice-events
+    published_min: -52
+    attempts:
+      - {at_min: -51, status: 503, time_taken_ms: 412}
+      - {at_min: -50, status: 200, time_taken_ms: 184}
+
+logs:
+  - {tenant_id: acme, destination_id: wg_3532, status: 200, count: 150, from_min: -360,
+     event_types: [payment.succeeded, invoice.paid], time_taken_ms: [150, 450]}
+  - {tenant_id: acme, destination_id: wg_3532, status: 503, count: 6, from_min: -55, to_min: -48,
+     event_types: [invoice.paid, payment.succeeded], time_taken_ms: [300, 600]}

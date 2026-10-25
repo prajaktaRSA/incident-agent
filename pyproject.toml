@@ -1,0 +1,36 @@
+[project]
+name = "incident-agent"
+version = "0.1.0"
+description = "LangGraph agent for investigating webhook delivery incidents"
+readme = "README.md"
+authors = [
+    { name = "misfits4017-ux", email = "338730553+misfits4017-ux@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28.1",
+    "langchain-core>=1.7.0",
+    "langchain-google-genai>=4.4.2",
+    "langgraph>=1.2.17",
+    "pydantic>=2.14.1",
+    "pydantic-settings>=2.16.1",
+    "pyyaml>=6.0.3",
+    "rank-bm25>=0.2.2",
+    "rich>=15.0.0",
+    "typer>=0.27.3",
+]
+
+[project.scripts]
+incident-agent = "incident_agent.apps.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.13.5,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

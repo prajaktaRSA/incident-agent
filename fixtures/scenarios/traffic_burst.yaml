@@ -1,0 +1,18 @@
+name: traffic_burst
+description: >
+  A large batch of payment events (month-end billing) arrived 20 minutes ago. Offset lag on
+  payment-events crossed the critical alarm, but time lag stayed around 10s: consumers are keeping
+  up and the backlog is draining. Expected conclusion: TRAFFIC_BURST.
+
+metrics:
+  - metric: kafka.max_offset_lag
+    dimensions: {Topic: payment-events}
+    spikes: [{from_min: -20, value: 5200}]
+  - metric: kafka.sum_offset_lag
+    dimensions: {Topic: payment-events}
+    spikes: [{from_min: -20, value: 14800}]
+  - metric: kafka.time_lag
+    dimensions: {Topic: payment-events}
+    spikes: [{from_min: -20, value: 11}]
+  - metric: webhook.delivery_attempts
+    spikes: [{from_min: -20, value: 4800}]
